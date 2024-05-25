@@ -12,6 +12,8 @@ type Repository interface {
 	GetById(ctx context.Context, tx *sql.Tx, id int) (*domain.Product, error)
 	CreateProduct(ctx context.Context, tx *sql.Tx, pr *domain.Product) (int, error)
 	CreateProductStat(ctx context.Context, tx *sql.Tx, ps *domain.ProductStat) error
+	UpdateProduct(ctx context.Context, tx *sql.Tx, ps *domain.Product) error
+	GetByUserID(ctx context.Context, tx *sql.Tx, userID int) ([]domain.Product, error)
 }
 
 type RepositoryImpl struct{}
@@ -29,7 +31,7 @@ func (r *RepositoryImpl) GetAllProduct(ctx context.Context, tx *sql.Tx) ([]domai
 	dp := []domain.Product{}
 	for rows.Next() {
 		pr := &domain.Product{}
-		err := rows.Scan(&pr.Id,  &pr.Url_image,&pr.Name,  &pr.Deskripsi, &pr.Category,&pr.Price, &pr.Quantity, &pr.Userid)
+		err := rows.Scan(&pr.Id, &pr.Url_image, &pr.Name, &pr.Deskripsi, &pr.Category, &pr.Price, &pr.Quantity, &pr.Userid)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +42,7 @@ func (r *RepositoryImpl) GetAllProduct(ctx context.Context, tx *sql.Tx) ([]domai
 
 func (r *RepositoryImpl) GetById(ctx context.Context, tx *sql.Tx, id int) (*domain.Product, error) {
 	pr := &domain.Product{}
-	err := tx.QueryRowContext(ctx, "select * from product where id = ?", id).Scan(&pr.Id,  &pr.Url_image,&pr.Name,  &pr.Deskripsi, &pr.Category,&pr.Price, &pr.Quantity, &pr.Userid)
+	err := tx.QueryRowContext(ctx, "select * from product where id = ?", id).Scan(&pr.Id, &pr.Url_image, &pr.Name, &pr.Deskripsi, &pr.Category, &pr.Price, &pr.Quantity, &pr.Userid)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("cannot find requested id")
@@ -51,7 +53,7 @@ func (r *RepositoryImpl) GetById(ctx context.Context, tx *sql.Tx, id int) (*doma
 }
 
 func (r *RepositoryImpl) CreateProduct(ctx context.Context, tx *sql.Tx, pr *domain.Product) (int, error) {
-	result, err := tx.ExecContext(ctx, "insert into product (name,price,quantity,deskripsi,category,userid,url_image) values(?,?,?,?,?,?,?)",pr.Name,pr.Price,pr.Quantity,pr.Deskripsi,pr.Category,pr.Userid,pr.Url_image)
+	result, err := tx.ExecContext(ctx, "insert into product (name,price,quantity,deskripsi,category,userid,url_image) values(?,?,?,?,?,?,?)", pr.Name, pr.Price, pr.Quantity, pr.Deskripsi, pr.Category, pr.Userid, pr.Url_image)
 	if err != nil {
 		return 0, err
 	}
@@ -72,4 +74,28 @@ func (r *RepositoryImpl) CreateProductStat(ctx context.Context, tx *sql.Tx, ps *
 		return err
 	}
 	return nil
+}
+
+func (r *RepositoryImpl) UpdateProduct(ctx context.Context, tx *sql.Tx, ps *domain.Product) error {
+	_, err := tx.ExecContext(ctx, "update product set url_image = ? ,name = ? ,deskripsi = ? ,price = ? ,quantity = ? where id = ? and userid = ?", ps.Url_image, ps.Name, ps.Deskripsi, ps.Price, ps.Quantity, ps.Id, ps.Userid)
+	return err
+}
+
+func (r *RepositoryImpl) GetByUserID(ctx context.Context, tx *sql.Tx, userID int) ([]domain.Product, error) {
+	rows, err := tx.QueryContext(ctx, "select * from product where userID= ?", userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	dp := []domain.Product{}
+	for rows.Next() {
+		pr := &domain.Product{}
+		err := rows.Scan(&pr.Id, &pr.Url_image, &pr.Name, &pr.Deskripsi, &pr.Category, &pr.Price, &pr.Quantity, &pr.Userid)
+		if err != nil {
+			return nil, err
+		}
+		dp = append(dp, *pr)
+	}
+	return dp, nil
 }

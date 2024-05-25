@@ -16,7 +16,7 @@ type ServiceImpl struct {
 	Db   *sql.DB
 }
 
-func NewService(repo Repository, db *sql.DB)*ServiceImpl {
+func NewService(repo Repository, db *sql.DB) *ServiceImpl {
 	return &ServiceImpl{
 		Repo: repo,
 		Db:   db,
@@ -94,4 +94,58 @@ func (s *ServiceImpl) CreateProductStat(ctx context.Context, productID int) erro
 
 	return err
 
+}
+
+func (s *ServiceImpl) UpdateProduct(ctx context.Context, ps *web.ProductUpdatePayload) error {
+
+	tx, err := s.Db.Begin()
+	if err != nil {
+		return err
+	}
+	defer exception.CommitOrRollback(tx)
+
+	err = s.Repo.UpdateProduct(ctx, tx, &domain.Product{
+		Id:        ps.Id,
+		Name:      ps.Name,
+		Deskripsi: ps.Deskripsi,
+		Category:  ps.Category,
+		Price:     ps.Price,
+		Quantity:  ps.Quantity,
+		Userid:    ps.Userid,
+		Url_image: ps.Url_image,
+	})
+
+	return err
+}
+
+func (s *ServiceImpl) GetByUserID(ctx context.Context, userID int) ([]web.Product, error) {
+	tx, err := s.Db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer exception.CommitOrRollback(tx)
+
+	ps, err := s.Repo.GetByUserID(ctx, tx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.ConvertProductIntoSlice(ps), nil
+}
+
+
+
+func checkIfIDisExist(ps []web.Product,productID int)error {
+	psMap:=make(map[int]web.Product)
+	for _,product  := range ps {
+		psMap[product.Id]=product
+	}
+
+	// check if id exist
+	_,ok:=psMap[productID]
+	if !ok{
+		return fmt.Errorf("cannot find the id")
+	}else {
+		return nil
+	}
 }

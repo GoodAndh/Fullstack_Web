@@ -14,7 +14,7 @@ func main() {
 		Passwd:               "r23password",
 		Net:                  "tcp",
 		Addr:                 "127.0.0.1:3306",
-		DBName:               "newshoponline",
+		DBName:               "newshoponline_test",
 		AllowNativePasswords: true,
 		ParseTime:            true,
 	})
