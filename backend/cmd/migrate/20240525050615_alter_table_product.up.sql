@@ -1,0 +1,1 @@
+alter table product modify column Category enum("etc","electric","consumable") default "etc" null;
