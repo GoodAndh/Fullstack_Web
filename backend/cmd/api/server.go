@@ -3,14 +3,17 @@ package api
 import (
 	"database/sql"
 	"fullstack_toko/backend/app"
+	"fullstack_toko/backend/exception"
 	"fullstack_toko/backend/service/cart"
 	"fullstack_toko/backend/service/order"
 	"fullstack_toko/backend/service/produk"
+	"fullstack_toko/backend/service/token"
 	"fullstack_toko/backend/service/user"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rs/cors"
 )
 
 type ApiServer struct {
@@ -27,6 +30,7 @@ func NewServer(addr string, db *sql.DB) *ApiServer {
 
 func (s *ApiServer) Run() error {
 	router := httprouter.New()
+	router.NotFound =exception.NotFoundHandler()
 	var validator *validator.Validate = validator.New()
 
 	userRepo := user.NewRepository()
@@ -44,5 +48,9 @@ func (s *ApiServer) Run() error {
 	cartHandler := cart.NewHandler(userService,productService,orderService,validator)
 	cartHandler.RegistierRoute(router)
 
-	return http.ListenAndServe(s.Addr, app.Middleware(router))
+	token:=token.TokenHandler()
+	token.RegisterRoute(router)
+
+	handler:=cors.Default().Handler(router)
+	return http.ListenAndServe(s.Addr, app.Middleware(handler))
 }
