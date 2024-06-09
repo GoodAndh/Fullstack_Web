@@ -39,7 +39,7 @@ func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request, par
 	str := claims["userID"].(string)
 	userID, _ := strconv.Atoi(str)
 
-	newToken, err := exception.CreateJwt(exception.SecretKey, userID, time.Minute*10)
+	newToken, err := exception.CreateJwtAccesToken(exception.SecretKey, userID, time.Minute*10)
 	if err != nil {
 		exception.JsonInternalError(w, err.Error())
 		return

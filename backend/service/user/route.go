@@ -54,12 +54,12 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request, params htt
 		return
 	}
 
-	token, err := exception.CreateJwt(exception.SecretKey, u.Id, time.Minute*15)
+	token, err := exception.CreateJwtAccesToken(exception.SecretKey, u.Id, time.Minute*15)
 	if err != nil {
 		exception.WriteJson(w, http.StatusInternalServerError, "status internal server error", err.Error(), nil)
 		return
 	}
-	Refreshtoken, err := exception.CreateJwt(exception.SecretKey, u.Id, time.Hour*1)
+	Refreshtoken, err := exception.CreateJwtRefreshToken(exception.SecretKey, u.Id, u.Email,time.Hour*1)
 	if err != nil {
 		exception.WriteJson(w, http.StatusInternalServerError, "status internal server error", err.Error(), nil)
 		return
