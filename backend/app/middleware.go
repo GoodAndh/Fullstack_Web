@@ -40,18 +40,11 @@ func HandleWithMiddleware(handler httprouter.Handle) httprouter.Handle {
 func JwtMiddleware(handler httprouter.Handle, userService web.UserService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-		accesCookie,err:=r.Cookie("Authorization")
-		if err != nil {
-			exception.JsonUnauthorized(w,err.Error())
-			return
-		}
+		
 		
 		//get token the from user request
 		tokenString := utils.GetTokenFromRequest(r)
-		if accesCookie.Value!=tokenString {
-			exception.JsonUnauthorized(w,"invalid token")
-			return
-		}
+		
 		
 		//validate the JWT
 		token, err := exception.ValidateJwt(tokenString)
