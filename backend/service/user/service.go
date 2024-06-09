@@ -120,3 +120,19 @@ func (s *ServiceImpl) GetByEmail(ctx context.Context, email string) (*web.User, 
 
 	return utils.ConvertUserIntoWeb(us), nil
 }
+
+func (s *ServiceImpl) GetUserProfile(ctx context.Context, id int) (*web.UserProfile, error) {
+	tx,err:=s.Db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer exception.CommitOrRollback(tx)
+
+	us,err:=s.Repo.GetUserProfile(ctx,tx,id)
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.ConvertProfileIntoWeb(us),nil
+}

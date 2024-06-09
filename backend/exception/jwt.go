@@ -2,6 +2,7 @@ package exception
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -10,10 +11,10 @@ import (
 
 var SecretKey = []byte("very-super-not-secret-anymore")
 
-func CreateJwt(secret []byte, userId int) (string, error) {
+func CreateJwt(secret []byte, userId int, timeIn time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID":    strconv.Itoa(userId),
-		"expiredAt": time.Now().Add(time.Hour * 8).Unix(),
+		"userID": strconv.Itoa(userId),
+		"exp":    time.Now().Add(timeIn).Unix(),
 	})
 
 	tokenString, err := token.SignedString(secret)
@@ -24,10 +25,22 @@ func CreateJwt(secret []byte, userId int) (string, error) {
 }
 
 func ValidateJwt(t string) (*jwt.Token, error) {
+
 	return jwt.Parse(t, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return SecretKey, nil
 	})
+}
+
+func SetCookie(w http.ResponseWriter, token, name string, duration time.Duration) {
+	cookie := http.Cookie{
+		Name:     name,
+		Value:    token,
+		Expires:  time.Now().Add(duration),
+		HttpOnly: true,
+		Path:     "/",
+	}
+	http.SetCookie(w, &cookie)
 }

@@ -7,6 +7,7 @@ import (
 	"fullstack_toko/backend/utils"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/julienschmidt/httprouter"
@@ -25,6 +26,7 @@ func NewHandler(service web.UserService, validator *validator.Validate) *Handler
 }
 func (h *Handler) RegistierRoute(router *httprouter.Router) {
 	router.POST("/api/v1/login", h.handleLogin)
+	router.GET("/api/v1/me/", app.JwtMiddleware(h.handleUsers, h.service))
 
 	router.POST("/api/v1/register/users", h.handleRegister)
 
@@ -51,13 +53,22 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request, params htt
 		exception.WriteJson(w, http.StatusBadRequest, "bad request", "invalid username or password", nil)
 		return
 	}
-	token, err := exception.CreateJwt(exception.SecretKey, u.Id)
+
+	token, err := exception.CreateJwt(exception.SecretKey, u.Id, time.Minute*15)
+	if err != nil {
+		exception.WriteJson(w, http.StatusInternalServerError, "status internal server error", err.Error(), nil)
+		return
+	}
+	Refreshtoken, err := exception.CreateJwt(exception.SecretKey, u.Id, time.Hour*1)
 	if err != nil {
 		exception.WriteJson(w, http.StatusInternalServerError, "status internal server error", err.Error(), nil)
 		return
 	}
 
-	exception.WriteJson(w, http.StatusOK, "status ok", "success", map[string]string{"token": token})
+	exception.SetCookie(w, token, "Authorization", time.Minute*10)
+	exception.SetCookie(w, Refreshtoken, "refresh_token", time.Hour*1)
+
+	exception.WriteJson(w, http.StatusOK, "status ok", "success", map[string]string{"auth": token})
 
 }
 
@@ -68,7 +79,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request, params 
 		var payload web.UserRegisterPayload
 
 		if err := exception.ParseJson(r, &payload); err != nil {
-			exception.JsonInternalError(w, "server under maintenance")
+			exception.JsonInternalError(w, err.Error())
 			return
 		}
 
@@ -80,7 +91,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request, params 
 		hashedPassword, err := exception.HashPassword(payload.Password)
 		if err != nil {
 			log.Println("Hashed password error,message:", err)
-			exception.WriteJson(w, http.StatusInternalServerError, "internal server error", "server under maintenance", nil)
+			exception.JsonInternalError(w, err.Error())
 			return
 		}
 
@@ -101,13 +112,15 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request, params 
 		userId, err := h.service.CreateUsers(r.Context(), &payload)
 		if err != nil {
 			log.Println("create users error,message:", err)
-			exception.WriteJson(w, http.StatusInternalServerError, "internal server error", "server under maintenance", nil)
+			exception.JsonInternalError(w, err.Error())
+
 			return
 		}
 
 		if err := h.service.CreateUsersProfile(r.Context(), userId); err != nil {
 			log.Println("create users_profile error,message:", err)
-			exception.WriteJson(w, http.StatusInternalServerError, "internal server error", "server under maintenance", nil)
+			exception.JsonInternalError(w, err.Error())
+
 			return
 		}
 
@@ -159,4 +172,33 @@ func (h *Handler) handleUpdateUsers(w http.ResponseWriter, r *http.Request, para
 
 	}
 
+}
+
+func (h *Handler) handleUsers(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	switch r.Method {
+	case http.MethodGet:
+		userID, ok := app.GetUserIDfromContext(r.Context())
+		if !ok {
+			exception.JsonUnauthorized(w, "invalid token")
+			return
+		}
+
+		users, err := h.service.GetByID(r.Context(), userID)
+		if err != nil {
+			exception.JsonForbidden(w, err.Error())
+			return
+		}
+
+		profile, err := h.service.GetUserProfile(r.Context(), userID)
+		if err != nil {
+			exception.JsonForbidden(w, err.Error())
+			return
+		}
+
+		exception.WriteJson(w, http.StatusOK, "status ok", "succes", map[string]any{
+			"users":   users,
+			"profile": profile,
+		})
+		return
+	}
 }

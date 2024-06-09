@@ -53,12 +53,12 @@ type UserProfileRegisterPayload struct {
 	UserId    int    `json:"userid" validate:"required"`
 }
 
-
 type UserService interface {
 	GetUsername(ctx context.Context, username string) (*User, error)
 	CreateUsers(ctx context.Context, us *UserRegisterPayload) (int, error)
 	CreateUsersProfile(ctx context.Context, userId int) error
 	GetByID(ctx context.Context, id int) (*User, error)
 	UpdateUserProfile(ctx context.Context, pf *UserProfileUpdatePayload) error
-	GetByEmail(ctx context.Context,  email string) (*User, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	GetUserProfile(ctx context.Context, id int) (*UserProfile, error)
 }

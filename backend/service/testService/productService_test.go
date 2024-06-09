@@ -78,7 +78,7 @@ func TestCreateProduct(t *testing.T) {
 
 		payloadReader := bytes.NewReader(payloadBytes)
 		request := httptest.NewRequest(http.MethodPost, "http://localhost:3000/api/v1/register/product", payloadReader)
-		request.Header.Add("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkQXQiOjE3MTYyMzAzMjYsInVzZXJJRCI6IjEifQ.W3UQ2bSVkXcmNKicRJuufjoHofRjwA3WsF2mMBLOUPU")
+		request.Header.Add("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkQXQiOjE3MTY5MTA4MjMsInVzZXJJRCI6IjEifQ.8_DU7oFZZioyMuhzU6aSEDMFEzvgXr1DmGyhCHApSkk")
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
 

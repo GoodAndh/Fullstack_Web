@@ -15,6 +15,7 @@ type Repository interface {
 	CreateUsersProfile(ctx context.Context, tx *sql.Tx, userId int) error
 	UpdateUserProfile(ctx context.Context, tx *sql.Tx, pf *domain.UserProfile) error
 	GetByEmail(ctx context.Context, tx *sql.Tx, email string) (*domain.User, error)
+	GetUserProfile(ctx context.Context, tx *sql.Tx, id int) (*domain.UserProfile, error)
 }
 
 type RepositoryImpl struct{}
@@ -53,7 +54,7 @@ func (r *RepositoryImpl) CreateUsers(ctx context.Context, tx *sql.Tx, us *domain
 }
 
 func (r *RepositoryImpl) CreateUsersProfile(ctx context.Context, tx *sql.Tx, userId int) error {
-	_, err := tx.ExecContext(ctx, "insert into users_profile (userid) values(?)", userId)
+	_, err := tx.ExecContext(ctx, "insert into users_profile (userid,deskripsi) values(?,?)", userId,"description not setting")
 	if err != nil {
 		return err
 	}
@@ -100,4 +101,13 @@ func (r *RepositoryImpl) GetByEmail(ctx context.Context, tx *sql.Tx, email strin
 	}
 
 	return us, nil
+}
+
+func (r *RepositoryImpl) GetUserProfile(ctx context.Context, tx *sql.Tx, id int) (*domain.UserProfile, error) {
+	u := &domain.UserProfile{}
+	err := tx.QueryRowContext(ctx, "select id,url_image,name,deskripsi,userid from users_profile where userid = ?", id).Scan(&u.Id, &u.Url_image, &u.Name, &u.Deskripsi, &u.UserId)
+	if err==sql.ErrNoRows{
+		return nil,fmt.Errorf("cannot fine userId:%d",id)
+	}
+	return u, err
 }
