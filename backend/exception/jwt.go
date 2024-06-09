@@ -2,7 +2,6 @@ package exception
 
 import (
 	"fmt"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -32,15 +31,4 @@ func ValidateJwt(t string) (*jwt.Token, error) {
 		}
 		return SecretKey, nil
 	})
-}
-
-func SetCookie(w http.ResponseWriter, token, name string, duration time.Duration) {
-	cookie := http.Cookie{
-		Name:     name,
-		Value:    token,
-		Expires:  time.Now().Add(duration),
-		HttpOnly: true,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
 }

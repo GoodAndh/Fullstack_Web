@@ -62,7 +62,7 @@ func JwtMiddleware(handler httprouter.Handle, userService web.UserService) httpr
 		}
 
 		if !token.Valid {
-			exception.JsonUnauthorized(w,err.Error())
+			exception.JsonUnauthorized(w,"invalid token")
 			return
 		}
 

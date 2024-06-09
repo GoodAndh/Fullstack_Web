@@ -1,7 +1,6 @@
 package token
 
 import (
-	"fmt"
 	"fullstack_toko/backend/exception"
 	"net/http"
 	"strconv"
@@ -22,13 +21,10 @@ func (h *Handler) RegisterRoute(router *httprouter.Router) {
 }
 
 func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	cookie, err := r.Cookie("refresh_token")
-	if err != nil {
-		exception.JsonUnauthorized(w, fmt.Sprintf("cannot find the cookie,message:%s", err.Error()))
-		return
-	}
 
-	token, err := exception.ValidateJwt(cookie.Value)
+	Value := r.Header.Get("refresh_token")
+
+	token, err := exception.ValidateJwt(Value)
 	if err != nil {
 		exception.JsonUnauthorized(w, err.Error())
 		return
@@ -43,12 +39,11 @@ func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request, par
 	str := claims["userID"].(string)
 	userID, _ := strconv.Atoi(str)
 
-	newToken, err := exception.CreateJwt(exception.SecretKey, userID, time.Minute*15)
+	newToken, err := exception.CreateJwt(exception.SecretKey, userID, time.Minute*10)
 	if err != nil {
 		exception.JsonInternalError(w, err.Error())
 		return
 	}
-	exception.SetCookie(w, newToken, "Authorization", time.Minute*10)
 
 	exception.WriteJson(w, http.StatusOK, "status ok", "success", map[string]string{"auth": newToken})
 

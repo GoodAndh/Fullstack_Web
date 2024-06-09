@@ -65,10 +65,9 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request, params htt
 		return
 	}
 
-	exception.SetCookie(w, token, "Authorization", time.Minute*10)
-	exception.SetCookie(w, Refreshtoken, "refresh_token", time.Hour*1)
-
-	exception.WriteJson(w, http.StatusOK, "status ok", "success", map[string]string{"auth": token})
+	exception.WriteJson(w, http.StatusOK, "status ok", "success", map[string]string{"auth": token,
+		"refresh_token": Refreshtoken,
+	})
 
 }
 
