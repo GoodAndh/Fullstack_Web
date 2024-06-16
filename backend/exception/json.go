@@ -22,18 +22,18 @@ func WriteJson(w http.ResponseWriter, code int, status, message string, v any) e
 	return json.NewEncoder(w).Encode(wr)
 }
 
-func JsonForbidden(w http.ResponseWriter, message string, v ...any) error {
+func JsonForbidden(w http.ResponseWriter, message string, v any) error {
 	return WriteJson(w, http.StatusForbidden, "status forbidden", message, v)
 }
 
-func JsonBadRequest(w http.ResponseWriter, message string, v ...any) error {
+func JsonBadRequest(w http.ResponseWriter, message string, v any) error {
 	return WriteJson(w, http.StatusBadRequest, "status bad reqeust", message, v)
 }
 
-func JsonInternalError(w http.ResponseWriter, message string, v ...any) error {
+func JsonInternalError(w http.ResponseWriter, message string, v any) error {
 	return WriteJson(w, http.StatusInternalServerError, "status internal server error", message, v)
 }
 
-func JsonUnauthorized(w http.ResponseWriter, message string, v ...any) error {
+func JsonUnauthorized(w http.ResponseWriter, message string, v any) error {
 	return WriteJson(w, http.StatusUnauthorized, "status unauthorized", message, v)
 }

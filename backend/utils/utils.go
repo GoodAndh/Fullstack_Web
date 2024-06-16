@@ -117,7 +117,7 @@ func ValidateStruct(validate *validator.Validate, stx any) map[string]any {
 	return errorList
 }
 
-func GetTokenFromRequest(r *http.Request) string {
+func GetTokenAccessFromRequest(r *http.Request) string {
 	tokenAuth := r.Header.Get("Authorization")
 	tokenQuery := r.URL.Query().Get("token")
 
