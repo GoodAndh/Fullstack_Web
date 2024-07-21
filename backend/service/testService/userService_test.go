@@ -111,8 +111,6 @@ func TestRegisterUser(t *testing.T) {
 
 	})
 
-	
-
 }
 
 func TestLoginUser(t *testing.T) {
@@ -121,7 +119,6 @@ func TestLoginUser(t *testing.T) {
 	t.Run("login user failed", func(t *testing.T) {
 		requestBody := strings.NewReader(`{"username":"ini salah"}`)
 		request := httptest.NewRequest(http.MethodPost, "http://localhost:3000/api/v1/login", requestBody)
-
 
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
@@ -154,7 +151,8 @@ func TestLoginUser(t *testing.T) {
 		var webResponse web.WebResponse
 		result := WebResponseUnmarshal(recorder, &webResponse)
 
-		log.Println("your token :",result.Data)
+
+		log.Println("your token :", result.Data)
 		assert.Equal(t, 200, result.Code)
 
 	})

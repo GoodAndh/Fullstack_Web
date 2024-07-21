@@ -40,9 +40,7 @@ func (h *Handler) RegistierRoute(router *httprouter.Router) {
 
 	router.POST("/api/v1/upload/:productID", app.JwtMiddleware(h.handleUploadImg, h.userService))
 
-	router.GET("/api/v1/public/:img",app.HandleWithMiddleware(h.handleShowIMG))
-
-
+	router.GET("/api/v1/public/:img", app.HandleWithMiddleware(h.handleShowIMG))
 
 }
 
@@ -51,7 +49,9 @@ func (h *Handler) handleAllProduct(w http.ResponseWriter, r *http.Request, param
 	case http.MethodGet:
 		pr, err := h.service.GetAllProduct(r.Context())
 		if err != nil {
-			exception.JsonBadRequest(w, err.Error())
+			log.Println("error:", err)
+			exception.JsonBadRequest(w, err.Error(),nil)
+			w.Write([]byte(err.Error()))
 			return
 		}
 
@@ -66,13 +66,13 @@ func (h *Handler) handleGetById(w http.ResponseWriter, r *http.Request, params h
 		id := params.ByName("id")
 		idNumber, err := strconv.Atoi(id)
 		if err != nil {
-			exception.JsonBadRequest(w, "only number accepted")
+			exception.JsonBadRequest(w, "only number accepted",nil)
 			return
 		}
 
 		pr, err := h.service.GetById(r.Context(), idNumber)
 		if err != nil {
-			exception.JsonBadRequest(w, err.Error())
+			exception.JsonBadRequest(w, err.Error(),nil)
 			return
 		}
 		exception.WriteJson(w, http.StatusOK, "status ok ", "succes", pr)
@@ -87,15 +87,15 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request, params 
 		//get userID from context
 		userID, ok := app.GetUserIDfromContext(r.Context())
 		if !ok {
-			exception.JsonUnauthorized(w, "invalid token")
+			exception.JsonUnauthorized(w, "invalid token",nil)
 			return
 		}
 
 		var payload web.ProductCreatePayload
 
 		if err := exception.ParseJson(r, &payload); err != nil {
-			log.Println("error while parsing payload,message:", err)
-			exception.JsonInternalError(w, "server under maintenance")
+			
+			exception.JsonInternalError(w, "server under maintenance",err.Error())
 			return
 		}
 
@@ -108,14 +108,12 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request, params 
 
 		prID, err := h.service.CreateProduct(r.Context(), &payload)
 		if err != nil {
-			log.Println("create product error ,message:", err)
-			exception.JsonInternalError(w, "server under maintenance")
+			exception.JsonInternalError(w, "server under maintenance",err.Error())
 			return
 		}
 
 		if err := h.service.CreateProductStat(r.Context(), prID); err != nil {
-			log.Println("create product_stat error ,message:", err)
-			exception.JsonInternalError(w, "server under maintenance")
+			exception.JsonInternalError(w, "server under maintenance",err.Error())
 			return
 		}
 
@@ -132,13 +130,13 @@ func (h *Handler) handleUploadImg(w http.ResponseWriter, r *http.Request, params
 		// get userID from context
 		userID, ok := app.GetUserIDfromContext(r.Context())
 		if !ok {
-			exception.JsonUnauthorized(w, "invalid token")
+			exception.JsonUnauthorized(w, "invalid token",nil)
 			return
 		}
 
 		ps, err := h.service.GetByUserID(r.Context(), userID)
 		if err != nil {
-			exception.JsonInternalError(w, err.Error())
+			exception.JsonInternalError(w, err.Error(),nil)
 			return
 		}
 
@@ -146,19 +144,19 @@ func (h *Handler) handleUploadImg(w http.ResponseWriter, r *http.Request, params
 		prID := params.ByName("productID")
 		pIDS, err := strconv.Atoi(prID)
 		if err != nil {
-			exception.JsonBadRequest(w, "number only accepted")
+			exception.JsonBadRequest(w, "number only accepted",nil)
 			return
 		}
 
 		// validate productIDs
 		if err := checkIfIDisExist(ps, pIDS); err != nil {
-			exception.JsonBadRequest(w, err.Error())
+			exception.JsonBadRequest(w, err.Error(),nil)
 			return
 		}
 
 		file, fileHeader, err := r.FormFile("imageReceiver")
 		if err != nil {
-			exception.JsonInternalError(w, err.Error())
+			exception.JsonInternalError(w, err.Error(),nil)
 			return
 		}
 		defer file.Close()
@@ -169,19 +167,19 @@ func (h *Handler) handleUploadImg(w http.ResponseWriter, r *http.Request, params
 		if errors.Is(err, fs.ErrNotExist) {
 			err := os.MkdirAll("./public/product", os.ModePerm)
 			if err != nil {
-				exception.JsonInternalError(w, err.Error())
+				exception.JsonInternalError(w, err.Error(),nil)
 				return
 			}
 		}
 
 		fileDestination, err := os.Create("./public/product/" + fileHeader.Filename)
 		if err != nil {
-			exception.JsonInternalError(w, err.Error())
+			exception.JsonInternalError(w, err.Error(),nil)
 			return
 		}
 		_, err = io.Copy(fileDestination, file)
 		if err != nil {
-			exception.JsonInternalError(w, err.Error())
+			exception.JsonInternalError(w, err.Error(),nil)
 			return
 		}
 
@@ -192,7 +190,7 @@ func (h *Handler) handleUploadImg(w http.ResponseWriter, r *http.Request, params
 			Userid:    userID,
 			Url_image: fileHeader.Filename,
 		}); err != nil {
-			exception.JsonInternalError(w, err.Error())
+			exception.JsonInternalError(w, err.Error(),nil)
 			return
 		}
 
@@ -204,22 +202,23 @@ func (h *Handler) handleUploadImg(w http.ResponseWriter, r *http.Request, params
 	}
 }
 
-
-func (h *Handler)handleShowIMG(w http.ResponseWriter, r *http.Request,params httprouter.Params)  {
-	switch r.Method{
+func (h *Handler) handleShowIMG(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	switch r.Method {
 	case http.MethodGet:
-		fileName:=params.ByName("img")
-		_,err:=os.Stat("./public/product/"+fileName)
-		if errors.Is(err,fs.ErrNotExist){
-			exception.JsonBadRequest(w,"cannot find filename")
+		
+		
+		fileName := params.ByName("img")
+		_, err := os.Stat("./public/product/" + fileName)
+		if errors.Is(err, fs.ErrNotExist) {
+			exception.JsonBadRequest(w, "cannot find filename",err.Error())
 			return
 		}
-		file,_:=os.Open("./public/product/"+fileName)
+		file, _ := os.Open("./public/product/" + fileName)
 		defer file.Close()
 
-		img,err:=io.ReadAll(file)
+		img, err := io.ReadAll(file)
 		if err != nil {
-			exception.JsonInternalError(w,err.Error())
+			exception.JsonInternalError(w, err.Error(),nil)
 			return
 		}
 		w.Write(img)

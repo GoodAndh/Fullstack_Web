@@ -10,10 +10,24 @@ import (
 
 var SecretKey = []byte("very-super-not-secret-anymore")
 
-func CreateJwt(secret []byte, userId int) (string, error) {
+func CreateJwtAccesToken(secret []byte, userID int, timeIn time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID":    strconv.Itoa(userId),
-		"expiredAt": time.Now().Add(time.Hour * 8).Unix(),
+		"userID": strconv.Itoa(userID),
+		"exp":    time.Now().Add(timeIn).Unix(),
+	})
+
+	tokenString, err := token.SignedString(secret)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
+
+func CreateJwtRefreshToken(secret []byte, userID int, email string, timeIn time.Duration) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userID": strconv.Itoa(userID),
+		"email":  email,
+		"exp":    time.Now().Add(timeIn).Unix(),
 	})
 
 	tokenString, err := token.SignedString(secret)

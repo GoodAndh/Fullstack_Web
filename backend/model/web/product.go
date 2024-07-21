@@ -28,7 +28,7 @@ type ProductUpdatePayload struct {
 	Name      string  `json:"name"`
 	Deskripsi string  `json:"deskripsi"`
 	Category  string  `json:"category"`
-	Price     float64 `json:"price"`
+	Price     int `json:"price"`
 	Quantity  int     `json:"quantity"`
 	Userid    int     `json:"userid" validate:"required"`
 	Url_image string  `json:"url_image"`

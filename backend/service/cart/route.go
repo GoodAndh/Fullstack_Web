@@ -41,7 +41,7 @@ func (h *Handler) handleParams(w http.ResponseWriter, r *http.Request, params ht
 		id := params.ByName("id")
 		productID, err := strconv.Atoi(id)
 		if err != nil {
-			exception.JsonBadRequest(w, "only number accepted")
+			exception.JsonBadRequest(w, "only number accepted",nil)
 			return
 		}
 
@@ -51,14 +51,13 @@ func (h *Handler) handleParams(w http.ResponseWriter, r *http.Request, params ht
 			//get userID from context
 			userID, ok := app.GetUserIDfromContext(r.Context())
 			if !ok {
-				exception.JsonUnauthorized(w, "invalid token")
+				exception.JsonUnauthorized(w, "invalid token",nil)
 				return
 			}
 
 			var cart web.CartCheckoutPayload
 			if err := exception.ParseJson(r, &cart); err != nil {
-				log.Println("error while parsing json,message:", err)
-				exception.JsonInternalError(w, "server undermaintenance")
+				exception.JsonInternalError(w, "server undermaintenance",err.Error())
 				return
 			}
 
@@ -75,13 +74,13 @@ func (h *Handler) handleParams(w http.ResponseWriter, r *http.Request, params ht
 			pR, err := h.productService.GetById(r.Context(), productID)
 			if err != nil {
 				log.Println("error while search the product by id,message:", err)
-				exception.JsonInternalError(w, "internal server error")
+				exception.JsonInternalError(w, "internal server error",err.Error())
 				return
 			}
 
 			orderID, TotalPrice, err := h.createOrders(r.Context(), pR, cart.Items, userID)
 			if err != nil {
-				exception.JsonBadRequest(w, err.Error())
+				exception.JsonBadRequest(w, err.Error(),err.Error())
 				return
 			}
 
@@ -105,14 +104,13 @@ func (h *Handler) handleGetOrder(w http.ResponseWriter, r *http.Request, params 
 
 		userID, ok := app.GetUserIDfromContext(r.Context())
 		if !ok {
-			exception.JsonUnauthorized(w, "invalid token")
+			exception.JsonUnauthorized(w, "invalid token",nil)
 			return
 		}
 
 		ordSlice, err := h.orderService.SearchOrders(r.Context(), userID)
 		if err != nil {
-			log.Println("error while search order ,message:", err)
-			exception.JsonInternalError(w, "server undermaintenance")
+			exception.JsonInternalError(w, "server undermaintenance",err.Error())
 			return
 		}
 
@@ -123,8 +121,7 @@ func (h *Handler) handleGetOrder(w http.ResponseWriter, r *http.Request, params 
 
 		ordItemSlice, err := h.orderService.SearchOrderItems(r.Context(), userID, orderID)
 		if err != nil {
-			log.Println("error while search orderItems ,message:", err)
-			exception.JsonInternalError(w, "server undermaintenance")
+			exception.JsonInternalError(w, "server undermaintenance",err.Error())
 			return
 		}
 		

@@ -9,6 +9,8 @@ require (
 	golang.org/x/crypto v0.23.0
 )
 
+require github.com/rs/cors v1.11.0
+
 require (
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-playground/assert/v2 v2.2.0
